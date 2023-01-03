@@ -21,9 +21,16 @@ public class SudokuController {
     @FXML
     public void initialize() {
         Node[] nodes = new Node[9];
+        Sudoku matrix = new Sudoku(9, 20);
         for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++)
-                nodes[j] = new Label(String.format("%s%s", j, i));
+            for (int j = 0; j < 9; j++){
+                if(Integer.toString(matrix.mat[i][j]).equals("0")){
+                    nodes[j] = new Label(" ");
+                } else {
+                    nodes[j] = new Label(Integer.toString(matrix.mat[i][j]));
+                }
+            }
+
             mainGrid.addRow(i, nodes);
         }
         for (int i = 0; i < 9; i++)
