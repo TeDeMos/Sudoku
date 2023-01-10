@@ -17,14 +17,23 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import utils.Generator;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class SudokuController {
-    private static final Background unselected =
+    private static final Background unselectedColor =
             new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
-    private static final Background selectedMain =
+    private static final Background selectedMainColor =
             new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
-    private static final Background selectedSecondary =
+    private static final Background selectedSecondaryColor =
             new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY));
+    private static final Color regularFontColor = Color.DARKBLUE;
+    private static final Color lockedFontColor = Color.BLACK;
+    private static final Color regularInvalidFontColor = Color.RED;
+    private static final Color lockedInvalidFontColor = Color.DARKRED;
     public GridPane mainGrid;
     public HBox numbers;
     public HBox control;
@@ -37,6 +46,7 @@ public class SudokuController {
     @FXML
     public void initialize() {
         gameState = new int[9][9];
+        blocked = new boolean[9][9];
         Node[] nodes = new Node[9];
         labels = new Label[9][9];
         for (int i = 0; i < 9; i++) {
@@ -51,6 +61,7 @@ public class SudokuController {
                 l.alignmentProperty().setValue(Pos.CENTER);
                 l.onMouseClickedProperty().setValue(this::gridMouseClick);
                 l.idProperty().setValue(String.format("L%s%s", i, j));
+                l.setTextFill(regularFontColor);
                 nodes[j] = l;
                 labels[i][j] = l;
             }
@@ -92,15 +103,16 @@ public class SudokuController {
     }
 
     private void setNumber(int x, int y, int number) {
-        if (gameState[x][y] < 0 || number < 0 || number > 9)
+        if (blocked[x][y] || number < 0 || number > 9)
             return;
         gameState[x][y] = number;
         labels[x][y].setText(number > 0 ? String.valueOf(number) : "");
+        detectInvalid();
     }
 
     private void selectCell(int x, int y) {
-        setBackgrounds(xPrevClicked, yPrevClicked, unselected, unselected);
-        setBackgrounds(x, y, selectedMain, selectedSecondary);
+        setBackgrounds(xPrevClicked, yPrevClicked, unselectedColor, unselectedColor);
+        setBackgrounds(x, y, selectedMainColor, selectedSecondaryColor);
         yPrevClicked = y;
         xPrevClicked = x;
     }
@@ -114,6 +126,79 @@ public class SudokuController {
             for (int j = 0; j < 3; j++)
                 labels[x / 3 * 3 + i][y / 3 * 3 + j].setBackground(secondary);
         labels[x][y].setBackground(main);
+    }
+
+    private void detectInvalid() {
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++)
+                setFontColor(i, j, false);
+        for (int i = 0; i < 9; i++) {
+            detectInvalidColumn(i);
+            detectInvalidInRow(i);
+            detectInvalidSquare(i / 3, i % 3);
+        }
+
+    }
+
+    private void detectInvalidInRow(int row) {
+        int[] rowArray = new int[9];
+        for (int i = 0; i < 9; i++)
+            rowArray[i] = gameState[i][row];
+        HashSet<Integer> duplicates = findDuplicates(rowArray);
+        for (int i = 0; i < 9; i++) {
+            if (duplicates.contains(gameState[i][row]))
+                setFontColor(i, row, true);
+        }
+    }
+
+    private void detectInvalidColumn(int column) {
+        HashSet<Integer> duplicates = findDuplicates(gameState[column]);
+        for (int i = 0; i < 9; i++) {
+            if (duplicates.contains(gameState[column][i]))
+                setFontColor(column, i, true);
+        }
+    }
+
+    private void detectInvalidSquare(int x, int y) {
+        int[] square = new int[9];
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                square[i * 3 + j] = gameState[x * 3 + i][y * 3 + j];
+        HashSet<Integer> duplicates = findDuplicates(square);
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (duplicates.contains(gameState[x * 3 + i][y * 3 + j]))
+                    setFontColor(x * 3 + i, y * 3 + j, true);
+    }
+
+    private static HashSet<Integer> findDuplicates(int[] array) {
+        HashSet<Integer> used = new HashSet<>();
+        HashSet<Integer> duplicates = new HashSet<>();
+        for (int i : array)
+            if (!used.add(i))
+                duplicates.add(i);
+        return duplicates;
+    }
+
+    private void setFontColor(int x, int y, boolean invalid) {
+        if (invalid)
+            labels[x][y].setTextFill(blocked[x][y] ? lockedInvalidFontColor : regularInvalidFontColor);
+        else
+            labels[x][y].setTextFill(blocked[x][y] ? lockedFontColor : regularFontColor);
+    }
+
+    private void loadLevel(int[][] state) {
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++) {
+                setNumber(i, j, state[i][j]);
+                blocked[i][j] = state[i][j] > 0;
+                setFontColor(i, j, false);
+            }
+    }
+
+    @FXML
+    private void easyPressed(ActionEvent e) {
+        loadLevel(Generator.generateRandomFilled());
     }
 
     public void setBinding(Stage stage) {

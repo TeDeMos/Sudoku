@@ -1,11 +1,24 @@
 package utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Generator {
     private final ArrayList<HashSet<Integer>> availableNumbers;
     private final Random random;
     private final int[][] result;
+
+    private Generator() {
+        availableNumbers = new ArrayList<>(81);
+        random = new Random();
+        for (int i = 0; i < 81; i++)
+            availableNumbers.add(new HashSet<>());
+        result = new int[9][9];
+    }
 
     public static void main(String[] args) {
         int[][] result = generateRandomFilled();
@@ -17,15 +30,8 @@ public class Generator {
     public static int[][] generateRandomFilled() {
         Generator g = new Generator();
         g.generate(0, false);
+        g.removeSpaces(45);
         return g.result;
-    }
-
-    private Generator() {
-        availableNumbers = new ArrayList<>(81);
-        random = new Random();
-        for (int i = 0; i < 81; i++)
-            availableNumbers.add(new HashSet<>());
-        result = new int[9][9];
     }
 
     private void generate(int index, boolean backtracked) {
@@ -43,6 +49,16 @@ public class Generator {
             availableNumbers.get(index).remove(chosen);
             if (index < 80)
                 generate(index + 1, false);
+        }
+    }
+
+    private void removeSpaces(int amount) {
+        ArrayList<Integer> indicesLeft =
+                IntStream.range(0, 81).boxed().collect(Collectors.toCollection(ArrayList::new));
+        for (int i = 0; i < amount; i++) {
+            int chosen = indicesLeft.get(random.nextInt(indicesLeft.size()));
+            indicesLeft.remove(Integer.valueOf(chosen));
+            result[chosen % 9][chosen / 9] = 0;
         }
     }
 
