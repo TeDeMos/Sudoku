@@ -6,12 +6,12 @@
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.sudoku.SudokuController" spacing="10"
       alignment="CENTER">
-    <GridPane gridLinesVisible="true" fx:id="mainGrid" alignment="CENTER"/>
+    <GridPane fx:id="mainGrid" alignment="CENTER" hgap="-1" vgap="-1"/>
     <HBox fx:id="numbers" spacing="10" alignment="CENTER"/>
     <HBox fx:id="control" spacing="10" alignment="CENTER">
-        <Button>Start easy</Button>
-        <Button>Start medium</Button>
-        <Button>Start hard</Button>
-        <Button>Show solution</Button>
+        <Button>Łatwe</Button>
+        <Button>Trudne</Button>
+        <Button>Rozwiązanie</Button>
+        <Button>Drukuj</Button>
     </HBox>
 </VBox>
