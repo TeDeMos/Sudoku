@@ -32,6 +32,7 @@ public class SudokuController {
     private int yPrevClicked;
     private int xPrevClicked;
     private int[][] gameState;
+    private boolean[][] blocked;
 
     @FXML
     public void initialize() {
@@ -91,6 +92,8 @@ public class SudokuController {
     }
 
     private void setNumber(int x, int y, int number) {
+        if (gameState[x][y] < 0 || number < 0 || number > 9)
+            return;
         gameState[x][y] = number;
         labels[x][y].setText(number > 0 ? String.valueOf(number) : "");
     }
