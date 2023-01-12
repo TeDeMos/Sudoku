@@ -8,10 +8,14 @@
       alignment="CENTER">
     <GridPane fx:id="mainGrid" alignment="CENTER" hgap="-1" vgap="-1"/>
     <HBox fx:id="numbers" spacing="10" alignment="CENTER"/>
-    <HBox fx:id="control" spacing="10" alignment="CENTER">
-        <Button onAction="#easyPressed">Łatwe</Button>
-        <Button>Trudne</Button>
-        <Button>Rozwiązanie</Button>
-        <Button>Drukuj</Button>
+    <HBox fx:id="controlA" spacing="10" alignment="CENTER">
+        <Button fx:id="bEasy" onAction="#controlAButtonPressed">Łatwe</Button>
+        <Button fx:id="bHard" onAction="#controlAButtonPressed">Trudne</Button>
+        <Button fx:id="bSolve" onAction="#controlAButtonPressed">Rozwiązanie</Button>
+    </HBox>
+    <HBox fx:id="controlB" spacing="10" alignment="CENTER">
+        <Button fx:id="bLoad" onAction="#controlBButtonPressed">Załaduj</Button>
+        <Button fx:id="bSave" onAction="#controlBButtonPressed">Zapisz</Button>
+        <Button fx:id="bPrint" onAction="#controlBButtonPressed">Drukuj</Button>
     </HBox>
 </VBox>
