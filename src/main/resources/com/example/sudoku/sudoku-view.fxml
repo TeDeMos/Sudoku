@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.sudoku.SudokuController" spacing="10"
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.sudoku.SudokuController" fx:id="mainVbox" spacing="10"
       alignment="CENTER">
     <GridPane fx:id="mainGrid" alignment="CENTER" hgap="-1" vgap="-1"/>
     <HBox fx:id="numbers" spacing="10" alignment="CENTER"/>
@@ -12,10 +12,12 @@
         <Button fx:id="bEasy" onAction="#controlAButtonPressed">Łatwe</Button>
         <Button fx:id="bHard" onAction="#controlAButtonPressed">Trudne</Button>
         <Button fx:id="bSolve" onAction="#controlAButtonPressed">Rozwiązanie</Button>
+        <Button fx:id="bHelp" onAction="#helpPressed">?</Button>
     </HBox>
     <HBox fx:id="controlB" spacing="10" alignment="CENTER">
         <Button fx:id="bLoad" onAction="#controlBButtonPressed">Załaduj</Button>
         <Button fx:id="bSave" onAction="#controlBButtonPressed">Zapisz</Button>
         <Button fx:id="bPrint" onAction="#controlBButtonPressed">Drukuj</Button>
+        <Button fx:id="bDark" onAction="#darkModePressed">a</Button>
     </HBox>
 </VBox>

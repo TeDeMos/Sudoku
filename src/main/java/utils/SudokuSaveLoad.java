@@ -7,15 +7,16 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SudokuSaveLoad {
-    public static boolean load(File file, int[][] level, int[][] state, IntList[][] notes) {
+    public static boolean load(File file, boolean[][] blocked, int[][] state, IntList[][] notes) {
         try {
             String content = Files.readString(file.toPath());
             String[] split = content.split(":");
             if (split.length != 3)
                 return false;
-            return split2DIntArray(split[0], level) && split2DIntArray(split[1], state) &&
+            return split2DBoolArray(split[0], blocked) && split2DIntArray(split[1], state) &&
                     split2DIntListArray(split[2], notes);
         } catch (IOException ex) {
             return false;
@@ -38,6 +39,16 @@ public class SudokuSaveLoad {
             return false;
         for (int i = 0; i < 9; i++)
             if (!splitIntArray(split[i], array[i]))
+                return false;
+        return true;
+    }
+
+    private static boolean split2DBoolArray(String s, boolean[][] array) {
+        String[] split = s.split(";");
+        if (split.length != 9)
+            return false;
+        for (int i = 0; i < 9; i++)
+            if (!splitBoolArray(split[i], array[i]))
                 return false;
         return true;
     }
@@ -70,9 +81,28 @@ public class SudokuSaveLoad {
         return true;
     }
 
-    public static boolean save(File file, int[][] level, int[][] state, IntList[][] notes) {
+    private static boolean splitBoolArray(String s, boolean[] array) {
+        String[] split = s.split(",");
+        if (split.length != 9)
+            return false;
+        for (int i = 0; i < 9; i++)
+            try {
+                int value = Integer.parseInt(split[i]);
+                if (value == 0)
+                    array[i] = false;
+                else if (value == 1)
+                    array[i] = true;
+                else
+                    return false;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        return true;
+    }
+
+    public static boolean save(File file, boolean[][] blocked, int[][] state, IntList[][] notes) {
         try (PrintWriter writer = new PrintWriter(file)) {
-            writer.write(join2DIntArray(level) + ":" + join2DIntArray(state) + ":" + join2DIntListArray(notes));
+            writer.write(join2DBoolArray(blocked) + ":" + join2DIntArray(state) + ":" + join2DIntListArray(notes));
             return true;
         } catch (FileNotFoundException ex) {
             return false;
@@ -87,12 +117,20 @@ public class SudokuSaveLoad {
         return Arrays.stream(array).map(SudokuSaveLoad::joinIntArray).collect(Collectors.joining(";"));
     }
 
+    private static String join2DBoolArray(boolean[][] array) {
+        return Arrays.stream(array).map(SudokuSaveLoad::joinBoolArray).collect(Collectors.joining(";"));
+    }
+
     private static String joinIntListArray(IntList[] array) {
         return Arrays.stream(array).map(IntList::join).collect(Collectors.joining(","));
     }
 
     private static String joinIntArray(int[] array) {
         return Arrays.stream(array).mapToObj(String::valueOf).collect(Collectors.joining(","));
+    }
+
+    private static String joinBoolArray(boolean[] array) {
+        return IntStream.range(0, array.length).mapToObj(x -> array[x] ? "1" : "0").collect(Collectors.joining(","));
     }
 
     public static boolean savePDF(File file, int[][] level) {

@@ -3,8 +3,6 @@ package utils;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Generator {
     private final IntList[][] availableNumbers;
@@ -53,7 +51,7 @@ public class Generator {
     public static int[][] generateRandomFilled(boolean hard) {
         Generator g = new Generator();
         g.generate();
-        g.removeSpaces(hard ? 56 : 40);
+        g.removeSpaces(hard ? 56 : /*40*/10);
         return g.result;
     }
 
@@ -92,7 +90,7 @@ public class Generator {
     }
 
     private void removeSpaces(int amount) {
-        IntList indicesLeft = IntStream.range(0, 81).boxed().collect(Collectors.toCollection(IntList::new));
+        IntList indicesLeft = IntList.fromRange(0, 81);
         for (int i = 0; i < amount; i++) {
             int chosen = indicesLeft.get(random.nextInt(indicesLeft.size()));
             indicesLeft.removeValue(chosen);
