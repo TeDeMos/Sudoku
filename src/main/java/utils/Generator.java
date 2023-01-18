@@ -1,11 +1,8 @@
 package utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Generator {
     private final IntList[][] availableNumbers;
@@ -54,7 +51,7 @@ public class Generator {
     public static int[][] generateRandomFilled(boolean hard) {
         Generator g = new Generator();
         g.generate();
-        g.removeSpaces(hard ? 56 : 40);
+        g.removeSpaces(hard ? 56 : /*40*/10);
         return g.result;
     }
 
@@ -82,7 +79,7 @@ public class Generator {
                 else
                     chosen = availableNumbers[x][y].get(random.nextInt(availableNumbers[x][y].size()));
                 result[x][y] = chosen;
-                availableNumbers[x][y].remove(Integer.valueOf(chosen));
+                availableNumbers[x][y].removeValue(chosen);
                 if (++y == 9) {
                     y = 0;
                     x++;
@@ -93,11 +90,10 @@ public class Generator {
     }
 
     private void removeSpaces(int amount) {
-        ArrayList<Integer> indicesLeft =
-                IntStream.range(0, 81).boxed().collect(Collectors.toCollection(ArrayList::new));
+        IntList indicesLeft = IntList.fromRange(0, 81);
         for (int i = 0; i < amount; i++) {
             int chosen = indicesLeft.get(random.nextInt(indicesLeft.size()));
-            indicesLeft.remove(Integer.valueOf(chosen));
+            indicesLeft.removeValue(chosen);
             result[chosen % 9][chosen / 9] = 0;
         }
     }
@@ -121,6 +117,4 @@ public class Generator {
                     used.add(result[xSquareStart + i][ySquareStart + j]);
         availableNumbers[x][y].removeAll(used);
     }
-
-    private static class IntList extends ArrayList<Integer> { } //Żeby dało się zrobić tablicę
 }
