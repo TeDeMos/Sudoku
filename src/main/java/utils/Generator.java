@@ -51,7 +51,7 @@ public class Generator {
     public static int[][] generateRandomFilled(boolean hard) {
         Generator g = new Generator();
         g.generate();
-        g.removeSpaces(hard ? 56 : /*40*/10);
+        g.removeSpaces(hard ? 56 : 40);
         return g.result;
     }
 
