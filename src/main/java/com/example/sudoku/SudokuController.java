@@ -122,7 +122,9 @@ public class SudokuController {
         Background unselected = SudokuColors.getUnselectedColor(darkMode);
         setBackgrounds(xSelected, ySelected, unselected, unselected);
         Alert a = new Alert(Alert.AlertType.INFORMATION);
-        //TODO
+        a.setTitle("Wygrana");
+        a.setHeaderText("Wygrana!");
+        a.setContentText("Gratulacje");
         a.show();
     }
 
@@ -318,7 +320,7 @@ public class SudokuController {
             return;
         int number = Integer.parseInt(((Button)e.getSource()).getId().substring(1));
         if (e.getButton() == MouseButton.PRIMARY)
-            setNumber(xSelected, ySelected, number, false, true);
+            setNumber(xSelected, ySelected, gameState[xSelected][ySelected] == number ? 0 : number, false, true);
         else if (e.getButton() == MouseButton.SECONDARY)
             setNote(xSelected, ySelected, number);
     }
@@ -350,6 +352,8 @@ public class SudokuController {
         File selected;
         switch (id) {
             case "bSave" -> {
+                if (!levelLoaded)
+                    return;
                 selected = chooser.showSaveDialog(stage);
                 if (selected == null || !SudokuSaveLoad.save(selected, blocked, gameState, notes)) {
                     showError("Błąd w zapisie pliku",
@@ -384,7 +388,7 @@ public class SudokuController {
             if (e.isShiftDown())
                 setNote(xSelected, ySelected, number);
             else
-                setNumber(xSelected, ySelected, number, false, true);
+                setNumber(xSelected, ySelected, gameState[xSelected][ySelected] == number ? 0 : number, false, true);
             return;
         }
         switch (e.getCode()) {
@@ -396,23 +400,38 @@ public class SudokuController {
         }
     }
 
-    public void helpPressed(ActionEvent actionEvent) {
+    public void helpPressed(ActionEvent ignored) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
-        //TODO
+        a.setTitle("Pomoc");
+        a.setHeaderText("Instrukcja gry:");
+        a.setContentText("""
+                Celem gry jest wstawienie cyfr w pola, żeby w każdej kolumnie, każdym rzędzie i każdym wyróżnionym kwadracie trzy na trzy znajdywały się wszystkie cyfry od 1 do 9 włącznie.
+                                
+                Sterowanie myszą:
+                -Zaznaczenie pola - kliknięcie na pole
+                -Wpisanie / usunięcie cyfry - kliknięcie lewym przyciskiem na przycisk z cyfrą / znakiem backspace
+                -Wpisanie / usunięcie notatki - kliknięcie prawym przyciskiem na przycisk z cyfrą / znakiem backspace
+                                
+                Sterowanie klawiaturą:
+                -Przesunięcie zaznaczenia - przyciski W (w górę), A (w lewo), S (w dół), D (w prawo)
+                -Wpisanie / usunięcie cyfry - przyciski od 1 do 9 / backspace lub 0
+                -Wpisanie / usunięcie notataki - przyciski od 1 do 9 z wciśniętym shiftem / backspace lub 0
+                """);
         a.show();
     }
 
-    public void darkModePressed(ActionEvent actionEvent) {
+    public void darkModePressed(ActionEvent ignored) {
         darkMode = !darkMode;
         mainVbox.setStyle(SudokuColors.getVBoxStyle(darkMode));
-        for (Node n : mainGrid.getChildren()) {
-            Label l = (Label)n;
-            l.setBackground(SudokuColors.getUnselectedColor(darkMode));
-            l.setBorder(SudokuColors.getLabelBorder(darkMode, GridPane.getColumnIndex(n), GridPane.getRowIndex(n)));
-        }
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++) {
+                labels[i][j].setBackground(SudokuColors.getUnselectedColor(darkMode));
+                labels[i][j].setBorder(SudokuColors.getLabelBorder(darkMode, i, j));
+            }
         detectInvalid(true);
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     public void setBinding(Stage stage) {
         stage.addEventHandler(KeyEvent.KEY_PRESSED, this::keyPressed);
         this.stage = stage;
@@ -420,8 +439,8 @@ public class SudokuController {
         ReadOnlyDoubleProperty height = stage.heightProperty();
         NumberBinding gridSide = Bindings.min(width.subtract(20), height.subtract(50).multiply(3).divide(4));
         NumberBinding labelSide = gridSide.divide(9).add(1);
-        NumberBinding buttonHeight = gridSide.subtract(110).divide(10);
-        NumberBinding controlButtonWidth = gridSide.subtract(40).subtract(buttonHeight).divide(3);
+        NumberBinding buttonHeight = gridSide.subtract(90).divide(10);
+        NumberBinding controlButtonWidth = gridSide.subtract(25).subtract(buttonHeight).divide(3);
         StringExpression buttonFontSize = Bindings.concat("-fx-font-size: ", buttonHeight.multiply(2).divide(5), ";");
         labelFontSize = Bindings.concat("-fx-font-size: ", labelSide.multiply(2).divide(3), ";");
         labelNoteFontSize = Bindings.concat("-fx-font-size: ", labelSide.divide(5), ";");

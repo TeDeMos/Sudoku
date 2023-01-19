@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 
 public class SudokuColors {
     private static final String vBoxStyleLight = "-fx-background-color: white;";
-    private static final String vBoxStyleDark = "-fx-background-color: black;";
+    private static final String vBoxStyleDark = "-fx-background-color: rgb(40, 40, 40);";
     private static final Background whiteBackground =
             new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     private static final Background darkestGrayBackground =
@@ -19,6 +19,27 @@ public class SudokuColors {
             new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
     private static final Background lightGrayBackground =
             new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY));
+    private static final Border[][] labelBordersLight;
+    private static final Border[][] labelBordersDark;
+
+    static {
+        labelBordersLight = new Border[9][9];
+        labelBordersDark = new Border[9][9];
+        for (int i = 0; i < 3; i++) {
+            double left = i == 0 ? 2 : 1;
+            double right = i == 2 ? 2 : 1;
+            for (int j = 0; j < 3; j++) {
+                double top = j == 0 ? 2 : 1;
+                double bottom = j == 2 ? 2 : 1;
+                labelBordersLight[i][j] = new Border(
+                        new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+                                new BorderWidths(top, right, bottom, left)));
+                labelBordersDark[i][j] = new Border(
+                        new BorderStroke(Color.rgb(100, 100, 100), BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+                                new BorderWidths(top, right, bottom, left)));
+            }
+        }
+    }
 
     public static String getVBoxStyle(boolean darkMode) {
         return darkMode ? vBoxStyleDark : vBoxStyleLight;
@@ -51,21 +72,6 @@ public class SudokuColors {
     }
 
     public static Border getLabelBorder(boolean darkMode, int x, int y) {
-        double top = y % 3 == 0 ? 2 : 1;
-        double bottom = y % 3 == 2 ? 2 : 1;
-        double left = x % 3 == 0 ? 2 : 1;
-        double right = x % 3 == 2 ? 2 : 1;
-        return new Border(new BorderStroke(darkMode ? Color.rgb(100, 100, 100) : Color.BLACK, BorderStrokeStyle.SOLID,
-                CornerRadii.EMPTY, new BorderWidths(top, right, bottom, left)));
-    }
-
-    public static Border getButtonBorder(boolean darkMode) {
-        //TODO
-        return null;
-    }
-
-    public static Background getButtonBackground(boolean darkMode) {
-        //TODO
-        return null;
+        return darkMode ? labelBordersDark[x % 3][y % 3] : labelBordersLight[x % 3][y % 3];
     }
 }
