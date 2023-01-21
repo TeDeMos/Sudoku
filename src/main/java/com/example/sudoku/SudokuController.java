@@ -374,7 +374,9 @@ public class SudokuController {
                 }
             }
             case "bPrint" -> {
-                //TODO
+                if (!levelLoaded)
+                    return;
+                SudokuSaveLoad.savePDF(gameState);
             }
         }
     }
