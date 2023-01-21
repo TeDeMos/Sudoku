@@ -18,6 +18,6 @@
         <Button fx:id="bLoad" onAction="#controlBButtonPressed">Załaduj</Button>
         <Button fx:id="bSave" onAction="#controlBButtonPressed">Zapisz</Button>
         <Button fx:id="bPrint" onAction="#controlBButtonPressed">Drukuj</Button>
-        <Button fx:id="bDark" onAction="#darkModePressed">a</Button>
+        <Button fx:id="bDark" onAction="#darkModePressed">☾</Button>
     </HBox>
 </VBox>

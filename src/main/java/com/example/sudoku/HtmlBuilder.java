@@ -161,8 +161,8 @@ public class HtmlBuilder {
             e.printStackTrace();
         }
     }
-    public static void main(String[] Args){
+    /*public static void main(String[] Args){
         HtmlBuilder b = new HtmlBuilder();
         b.createHtml();// level[][]
-    }
+    }*/
 }

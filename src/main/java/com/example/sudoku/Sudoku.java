@@ -1,5 +1,4 @@
 package com.example.sudoku;/* Java program for Sudoku generator  */
-
 public class Sudoku {
     public int[] mat[];
     int N; // number of columns/rows.

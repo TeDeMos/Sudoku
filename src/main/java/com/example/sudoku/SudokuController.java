@@ -109,6 +109,7 @@ public class SudokuController {
             Button b = new Button(i > 0 ? String.valueOf(i) : "\uD83D\uDD19");
             b.idProperty().setValue(String.format("B%s", i));
             b.setOnMouseClicked(this::numberButtonClick);
+            b.setOnAction(this::numberButtonAction);
             numbers.getChildren().add(b);
         }
     }
@@ -171,7 +172,9 @@ public class SudokuController {
             gameState[x][y] = 0;
             detectInvalid(false);
         }
-        if (notes[x][y].contains(number))
+        if (number == 0)
+            notes[x][y].clear();
+        else if (notes[x][y].contains(number))
             notes[x][y].removeValue(number);
         else {
             notes[x][y].add(number);
@@ -306,7 +309,7 @@ public class SudokuController {
         }
     }
 
-    public void gridMouseClick(MouseEvent e) {
+    private void gridMouseClick(MouseEvent e) {
         if (!playing)
             return;
         int pos = Integer.parseInt(((Label)e.getSource()).getId().substring(1));
@@ -315,7 +318,7 @@ public class SudokuController {
         selectCell(x, y);
     }
 
-    public void numberButtonClick(MouseEvent e) {
+    private void numberButtonClick(MouseEvent e) {
         if (!playing)
             return;
         int number = Integer.parseInt(((Button)e.getSource()).getId().substring(1));
@@ -323,6 +326,13 @@ public class SudokuController {
             setNumber(xSelected, ySelected, gameState[xSelected][ySelected] == number ? 0 : number, false, true);
         else if (e.getButton() == MouseButton.SECONDARY)
             setNote(xSelected, ySelected, number);
+    }
+
+    private void numberButtonAction(ActionEvent e){
+        if (!playing)
+            return;
+        int number = Integer.parseInt(((Button)e.getSource()).getId().substring(1));
+        setNumber(xSelected, ySelected, gameState[xSelected][ySelected] == number ? 0 : number, false, true);
     }
 
     @FXML
@@ -385,12 +395,13 @@ public class SudokuController {
         }
     }
 
-    public void keyPressed(KeyEvent e) {
+    private void keyPressed(KeyEvent e) {
         if (!playing)
             return;
         KeyCode code = e.getCode();
         if (code.isDigitKey()) {
-            int number = Integer.parseInt(code.getChar());
+            String name = code.getName();
+            int number = Integer.parseInt(name.substring(name.length() - 1));
             if (e.isShiftDown())
                 setNote(xSelected, ySelected, number);
             else
@@ -405,7 +416,7 @@ public class SudokuController {
             case BACK_SPACE -> setNumber(xSelected, ySelected, 0, false, true);
         }
     }
-
+    @FXML
     public void helpPressed(ActionEvent ignored) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setTitle("Pomoc");
@@ -425,7 +436,7 @@ public class SudokuController {
                 """);
         a.show();
     }
-
+    @FXML
     public void darkModePressed(ActionEvent ignored) {
         darkMode = !darkMode;
         mainVbox.setStyle(SudokuColors.getVBoxStyle(darkMode));
@@ -435,6 +446,7 @@ public class SudokuController {
                 labels[i][j].setBorder(SudokuColors.getLabelBorder(darkMode, i, j));
             }
         detectInvalid(true);
+        bDark.setText(darkMode ? "\u263C" : "\u263E" );
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
