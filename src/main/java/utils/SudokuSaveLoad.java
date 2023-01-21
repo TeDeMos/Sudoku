@@ -133,23 +133,17 @@ public class SudokuSaveLoad {
         return IntStream.range(0, array.length).mapToObj(x -> array[x] ? "1" : "0").collect(Collectors.joining(","));
     }
 
-    public static boolean savePDF(int[][] level) {
+    public static boolean savePDF(File file, boolean[][] blocked, int[][] state) {
         try {
-            PrintWriter writer = new PrintWriter("sudoku.txt");
-            for (int i = 0; i < level.length; i++) {
-                for (int j = 0; j < level[i].length; j++) {
-                    writer.print(level[j][i] + " ");
-                }
-                writer.println();
-            }
-            writer.close();
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "PDF.jar");
+            file.createNewFile();
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 9; i++)
+                for (int j = 0; j < 9; j++) builder.append(blocked[i][j] ? state[i][j] : 0);
+            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "PDF.jar", builder.toString(), file.getAbsolutePath());
             pb.start();
             return true;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
             return false;
         }
-
     }
 }

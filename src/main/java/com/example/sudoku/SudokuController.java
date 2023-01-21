@@ -376,7 +376,11 @@ public class SudokuController {
             case "bPrint" -> {
                 if (!levelLoaded)
                     return;
-                SudokuSaveLoad.savePDF(gameState);
+                selected = chooser.showSaveDialog(stage);
+                if (selected == null || !SudokuSaveLoad.savePDF(selected, blocked, gameState)) {
+                    showError("Błąd w zapisie pliku",
+                            "Upewnij się, że wybrałeś prawidłową ścieżkę, która nie ma ograniczonego dostępu");
+                }
             }
         }
     }
