@@ -20,8 +20,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import utils.Generator;
 import utils.IntList;
+import utils.SudokuGenerator;
 import utils.SudokuSaveLoad;
 
 import java.io.File;
@@ -30,10 +30,11 @@ import java.util.HashSet;
 import java.util.Optional;
 
 public class SudokuController {
-    public GridPane mainGrid;
-    public HBox numbers;
-    public HBox controlA;
-    public HBox controlB;
+    public VBox mainVbox;
+    public GridPane labelsGrid;
+    public HBox numberButtons;
+    public HBox controlButtonsA;
+    public HBox controlButtonsB;
     public Button bEasy;
     public Button bHard;
     public Button bSolve;
@@ -42,24 +43,66 @@ public class SudokuController {
     public Button bSave;
     public Button bHelp;
     public Button bDark;
-    public VBox mainVbox;
-    private Label[][] labels;
-    private IntList[][] notes;
     private Stage stage;
-
+    /**
+     * Tablica zawierające wszystkie wygenerowane labelki
+     */
+    private Label[][] labels;
+    /**
+     * Tablica przechowująca notatki
+     */
+    private IntList[][] notes;
+    /**
+     * Binding dla labelek określający wielkość trzcionki cyfry
+     */
     private StringExpression labelFontSize;
+    /**
+     * Binding dla labelek określający wielkość trzcionki notatek
+     */
     private StringExpression labelNoteFontSize;
-
+    /**
+     * Czy można edytować planszę
+     */
     private boolean playing;
-    private boolean levelLoaded;
+    /**
+     * Czy można zapisywać i drukować planzsę
+     */
+    private boolean gameLoaded;
+    /**
+     * Pozycja x wybranego pola
+     */
     private int xSelected;
+    /**
+     * Pozycja y wybranego pola
+     */
     private int ySelected;
+    /**
+     * Obecny stan planszy
+     */
     private int[][] gameState;
+    /**
+     * Rozwiązanie obecnej planszy
+     */
     private int[][] solution;
+    /**
+     * Macierz wskazująca, które pola są niezmienne
+     */
     private boolean[][] blocked;
+    /**
+     * Czy pokazane jest rozwiązanie
+     */
     private boolean solutionShown;
+    /**
+     * Czy włączony jest tryb ciemny
+     */
     private boolean darkMode;
 
+    /**
+     * Znajduję duplikaty w tablicy, zawsze dodając też 0
+     *
+     * @param array tablica do znalezienia duplikatów
+     * @return HashSet liczb całkowitych zawierający duplikaty i 0
+     */
     private static HashSet<Integer> findDuplicates(int[] array) {
         HashSet<Integer> used = new HashSet<>();
         HashSet<Integer> duplicates = new HashSet<>();
@@ -70,9 +113,18 @@ public class SudokuController {
         return duplicates;
     }
 
-    private static void bindNode(Node button, NumberBinding width, NumberBinding height, StringExpression style,
+    /**
+     * Binduje przyciski i labelki
+     *
+     * @param node      node do zbindowania
+     * @param width     szerokość nodu
+     * @param height    wysokość nodu
+     * @param style     styl nodu
+     * @param minHeight czy bindować też minimalną wysokość (labelki z notatkami rozjeżdżają się bez tego)
+     */
+    private static void bindNode(Node node, NumberBinding width, NumberBinding height, StringExpression style,
             boolean minHeight) {
-        Region r = (Region)button;
+        Region r = (Region)node;
         r.styleProperty().bind(style);
         r.prefWidthProperty().bind(width);
         r.prefHeightProperty().bind(height);
@@ -91,6 +143,9 @@ public class SudokuController {
         createNodes();
     }
 
+    /**
+     * Generowanie wszystkich nodów
+     */
     private void createNodes() {
         Node[] nodes = new Node[9];
         labels = new Label[9][9];
@@ -105,20 +160,23 @@ public class SudokuController {
                 nodes[j] = l;
                 labels[i][j] = l;
             }
-            mainGrid.addColumn(i, nodes);
+            labelsGrid.addColumn(i, nodes);
         }
         for (int i = 0; i < 10; i++) {
             Button b = new Button(i > 0 ? String.valueOf(i) : "\uD83D\uDD19");
             b.idProperty().setValue(String.format("B%s", i));
             b.setOnMouseClicked(this::numberButtonClick);
             b.setOnAction(this::numberButtonAction);
-            numbers.getChildren().add(b);
+            numberButtons.getChildren().add(b);
         }
     }
 
+    /**
+     * Zablokowanie edycji i pokazanie Alertu z gratulacjami
+     */
     private void showWin() {
         playing = false;
-        levelLoaded = false;
+        gameLoaded = false;
         for (int i = 0; i < 9; i++)
             for (int j = 0; j < 9; j++)
                 labels[i][j].setTextFill(SudokuColors.getFontColor(darkMode, true, false));
@@ -131,6 +189,12 @@ public class SudokuController {
         a.show();
     }
 
+    /**
+     * Zaznaczenie nowego pola i odznaczenie starego
+     *
+     * @param x pozycja x pola
+     * @param y pozycja y pola
+     */
     private void selectCell(int x, int y) {
         Background unselected = SudokuColors.getUnselectedColor(darkMode);
         Background selectedMain = SudokuColors.getSelectedColor(darkMode, false);
@@ -141,6 +205,14 @@ public class SudokuController {
         xSelected = x;
     }
 
+    /**
+     * Zmiana tła labelek
+     *
+     * @param x         pozycja x pola
+     * @param y         pozycja y pola
+     * @param main      kolor pola na tej pozycji
+     * @param secondary kolor pól, które zaznaczą się gdy będzie wybrana tamta pozycja (kolumna, rząd, kwadrat)
+     */
     private void setBackgrounds(int x, int y, Background main, Background secondary) {
         for (int i = 0; i < 9; i++) {
             labels[x][i].setBackground(secondary);
@@ -152,6 +224,15 @@ public class SudokuController {
         labels[x][y].setBackground(main);
     }
 
+    /**
+     * Wstawia cyfrę
+     *
+     * @param x            pozycja x pola
+     * @param y            pozycja y pola
+     * @param number       cyfra do wstawienia (0 usuwa)
+     * @param force        czy ignorować zablokowanie pola
+     * @param checkInvalid czy znaleźć niedozwolone pola po dodaniu cyfry
+     */
     private void setNumber(int x, int y, int number, boolean force, boolean checkInvalid) {
         if (!force && blocked[x][y])
             return;
@@ -162,11 +243,25 @@ public class SudokuController {
             detectInvalid(false);
     }
 
+    /**
+     * Wyświetla cyfrę bez zmiany stanu planszy
+     *
+     * @param x      pozycja x pola
+     * @param y      pozycja y pola
+     * @param number cyfra do wyświetlenia
+     */
     private void displayNumber(int x, int y, int number) {
         labels[x][y].setText(number > 0 ? String.valueOf(number) : "");
         labels[x][y].styleProperty().bind(labelFontSize);
     }
 
+    /**
+     * Zmienia notatkę
+     *
+     * @param x      pozycja x pola
+     * @param y      pozycja y pola
+     * @param number cyfra do dodania / usunięcia (0 usuwa wszystkie)
+     */
     private void setNote(int x, int y, int number) {
         if (blocked[x][y])
             return;
@@ -185,6 +280,12 @@ public class SudokuController {
         displayNotes(x, y);
     }
 
+    /**
+     * Wyświetla notatki
+     *
+     * @param x pozycja x pola
+     * @param y pozycja y pola
+     */
     private void displayNotes(int x, int y) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < notes[x][y].size(); i++) {
@@ -198,6 +299,11 @@ public class SudokuController {
         labels[x][y].styleProperty().bind(labelNoteFontSize);
     }
 
+    /**
+     * Zaznacza pola z duplikatami cyfr
+     *
+     * @param blockWinDetection czy nie sprawdzać wygranej
+     */
     private void detectInvalid(boolean blockWinDetection) {
         for (int i = 0; i < 9; i++)
             for (int j = 0; j < 9; j++)
@@ -210,6 +316,12 @@ public class SudokuController {
             showWin();
     }
 
+    /**
+     * Zaznacza pola z duplikatami w danym wierszu
+     *
+     * @param row indeks wiersza do sprawdzenia
+     * @return czy wiersz zawiera wszystkie cyfry od 1 do 9
+     */
     private boolean detectInvalidRow(int row) {
         int[] rowArray = new int[9];
         boolean result = false;
@@ -225,6 +337,12 @@ public class SudokuController {
         return result;
     }
 
+    /**
+     * Zaznacza pola z duplikatami w danej kolumnie
+     *
+     * @param column indeks kolumny do sprawdzenia
+     * @return czy kolumna zawiera wszystkie cyfry od 1 do 9
+     */
     private boolean detectInvalidColumn(int column) {
         HashSet<Integer> duplicates = findDuplicates(gameState[column]);
         boolean result = false;
@@ -237,6 +355,13 @@ public class SudokuController {
         return result;
     }
 
+    /**
+     * Zaznacza pola z duplikatami w danym kwadracie
+     *
+     * @param x pozycja x kwadratu (0-2)
+     * @param y pozycja y kwadratu (0-2)
+     * @return czy kwadrat zawiera wszystkie cyfry od 1 do 9
+     */
     private boolean detectInvalidSquare(int x, int y) {
         int[] square = new int[9];
         for (int i = 0; i < 3; i++)
@@ -255,7 +380,13 @@ public class SudokuController {
         return result;
     }
 
-    private void loadLevel(int[][] state, boolean[][] blocked) {
+    /**
+     * Ładuje nową planszę i rozpoczyna nową grę
+     *
+     * @param state   plansza do załadowania
+     * @param blocked zablokowane pola (gdy null zablokowane staną się wszystkie pola na którym są cyfry)
+     */
+    private void loadGame(int[][] state, boolean[][] blocked) {
         int[][] level = new int[9][9];
         for (int i = 0; i < 9; i++)
             for (int j = 0; j < 9; j++) {
@@ -263,14 +394,19 @@ public class SudokuController {
                 this.blocked[i][j] = blocked == null ? state[i][j] > 0 : blocked[i][j];
                 level[i][j] = this.blocked[i][j] ? state[i][j] : 0;
             }
-        solution = Generator.solve(level);
+        solution = SudokuGenerator.solve(level);
         playing = true;
-        levelLoaded = true;
+        gameLoaded = true;
         bSolve.setText("Rozwiązanie");
         selectCell(0, 0);
         detectInvalid(true);
     }
 
+    /**
+     * Ładuje notatki
+     *
+     * @param notes notatki
+     */
     private void loadNotes(IntList[][] notes) {
         for (int i = 0; i < 9; i++)
             for (int j = 0; j < 9; j++)
@@ -278,6 +414,12 @@ public class SudokuController {
                     setNote(i, j, n);
     }
 
+    /**
+     * Wyświetla Alert z błędem
+     *
+     * @param header  header Alertu
+     * @param content content Alertu
+     */
     private void showError(String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Bład");
@@ -286,8 +428,11 @@ public class SudokuController {
         alert.show();
     }
 
-    private void swapSolution() {
-        if (!levelLoaded)
+    /**
+     * Pokazuje lub ukrywa rozwiązanie
+     */
+    private void showHideSolution() {
+        if (!gameLoaded)
             return;
         solutionShown = !solutionShown;
         if (solutionShown) {
@@ -311,6 +456,11 @@ public class SudokuController {
         }
     }
 
+    /**
+     * Obsługuje kliknięcie myszą na labelkę
+     *
+     * @param e MouseEvent
+     */
     private void gridMouseClick(MouseEvent e) {
         if (!playing)
             return;
@@ -320,17 +470,23 @@ public class SudokuController {
         selectCell(x, y);
     }
 
+    /**
+     * Obsługuję kliknięcie prawym przyciskiem na przyciski z cyframi (wstawienie notatki)
+     *
+     * @param e MouseEvent
+     */
     private void numberButtonClick(MouseEvent e) {
-        if (!playing)
+        if (!playing || e.getButton() != MouseButton.SECONDARY)
             return;
-        int number = Integer.parseInt(((Button)e.getSource()).getId().substring(1));
-        if (e.getButton() == MouseButton.PRIMARY)
-            setNumber(xSelected, ySelected, gameState[xSelected][ySelected] == number ? 0 : number, false, true);
-        else if (e.getButton() == MouseButton.SECONDARY)
-            setNote(xSelected, ySelected, number);
+        setNote(xSelected, ySelected, Integer.parseInt(((Button)e.getSource()).getId().substring(1)));
     }
 
-    private void numberButtonAction(ActionEvent e){
+    /**
+     * Obsługuje wciśnięcie przycisku z cyframi (wstawienie cyfry)
+     *
+     * @param e MouseEvent
+     */
+    private void numberButtonAction(ActionEvent e) {
         if (!playing)
             return;
         int number = Integer.parseInt(((Button)e.getSource()).getId().substring(1));
@@ -341,18 +497,18 @@ public class SudokuController {
     private void controlAButtonPressed(ActionEvent e) {
         String id = ((Button)e.getSource()).getId();
         if (id.equals("bSolve"))
-            swapSolution();
+            showHideSolution();
         else {
-            Optional<ButtonType> result = null;
-            if (levelLoaded) {
+            Optional<ButtonType> result = Optional.empty();
+            if (gameLoaded) {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Uwaga!");
                 alert.setHeaderText("Uwaga");
                 alert.setContentText("Czy na pewno chcesz zacząć poziom o innej trudności?");
                 result = alert.showAndWait();
             }
-            if (!levelLoaded || result.isPresent() && result.get() == ButtonType.OK)
-                loadLevel(Generator.generateRandomFilled(id.equals("bHard")), null);
+            if (!gameLoaded || result.isPresent() && result.get() == ButtonType.OK)
+                loadGame(SudokuGenerator.generateRandomFilled(id.equals("bHard")), null);
         }
     }
 
@@ -374,7 +530,7 @@ public class SudokuController {
         File selected;
         switch (id) {
             case "bSave" -> {
-                if (!levelLoaded)
+                if (!gameLoaded)
                     return;
                 selected = chooser.showSaveDialog(stage);
                 if (selected == null || !SudokuSaveLoad.save(selected, blocked, gameState, notes)) {
@@ -388,7 +544,7 @@ public class SudokuController {
                 int[][] loadState = new int[9][9];
                 IntList[][] loadNotes = new IntList[9][9];
                 if (selected != null && SudokuSaveLoad.load(selected, loadBlocked, loadState, loadNotes)) {
-                    loadLevel(loadState, loadBlocked);
+                    loadGame(loadState, loadBlocked);
                     loadNotes(loadNotes);
                 } else {
                     showError("Błąd w ładowaniu pliku",
@@ -396,7 +552,7 @@ public class SudokuController {
                 }
             }
             case "bPrint" -> {
-                if (!levelLoaded)
+                if (!gameLoaded)
                     return;
                 selected = chooser.showSaveDialog(stage);
                 if (selected == null || !SudokuSaveLoad.savePDF(selected, blocked, gameState)) {
@@ -407,6 +563,11 @@ public class SudokuController {
         }
     }
 
+    /**
+     * Obsługuję klawiaturę
+     *
+     * @param e KeyEvent
+     */
     private void keyPressed(KeyEvent e) {
         if (!playing)
             return;
@@ -428,6 +589,7 @@ public class SudokuController {
             case BACK_SPACE -> setNumber(xSelected, ySelected, 0, false, true);
         }
     }
+
     @FXML
     public void helpPressed(ActionEvent ignored) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -448,6 +610,7 @@ public class SudokuController {
                 """);
         a.show();
     }
+
     @FXML
     public void darkModePressed(ActionEvent ignored) {
         darkMode = !darkMode;
@@ -458,9 +621,14 @@ public class SudokuController {
                 labels[i][j].setBorder(SudokuColors.getLabelBorder(darkMode, i, j));
             }
         detectInvalid(true);
-        bDark.setText(darkMode ? "\u263C" : "\u263E" );
+        bDark.setText(darkMode ? "\u263C" : "\u263E");
     }
 
+    /**
+     * Binduje wszystkie nody, żeby poprawnie zmieniały wielkość przy zmiany wielkości okna
+     *
+     * @param stage Stage przekazany z SudokuApplication
+     */
     @SuppressWarnings("SuspiciousNameCombination")
     public void setBinding(Stage stage) {
         stage.addEventHandler(KeyEvent.KEY_PRESSED, this::keyPressed);
@@ -474,15 +642,15 @@ public class SudokuController {
         StringExpression buttonFontSize = Bindings.concat("-fx-font-size: ", buttonHeight.multiply(2).divide(5), ";");
         labelFontSize = Bindings.concat("-fx-font-size: ", labelSide.multiply(2).divide(3), ";");
         labelNoteFontSize = Bindings.concat("-fx-font-size: ", labelSide.divide(5), ";");
-        for (HBox hBox : new HBox[] {controlA, controlB}) {
+        for (HBox hBox : new HBox[] {controlButtonsA, controlButtonsB}) {
             ObservableList<Node> children = hBox.getChildren();
             for (int i = 0; i < 3; i++)
                 bindNode(children.get(i), controlButtonWidth, buttonHeight, buttonFontSize, false);
             bindNode(children.get(3), buttonHeight, buttonHeight, buttonFontSize, false);
         }
-        for (Node n : numbers.getChildren())
+        for (Node n : numberButtons.getChildren())
             bindNode(n, buttonHeight, buttonHeight, buttonFontSize, false);
-        for (Node n : mainGrid.getChildren())
+        for (Node n : labelsGrid.getChildren())
             bindNode(n, labelSide, labelSide, labelFontSize, true);
     }
 }
