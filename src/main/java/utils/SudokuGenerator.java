@@ -4,14 +4,32 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
-public class Generator {
+public class SudokuGenerator {
+    /**
+     * Tablica dostępnych cyfr dla każdego pola
+     */
     private final IntList[][] availableNumbers;
+    /**
+     * Zmienna losowa
+     */
     private final Random random;
+    /**
+     * Wynik generowania lub rozwiązywania
+     */
     private final int[][] result;
+    /**
+     * Zablokowane pola
+     */
     private final boolean[][] blocked;
+    /**
+     * Czy rozwiązuje zamiast generować nową planszę
+     */
     private final boolean solve;
 
-    private Generator() {
+    /**
+     * Konstruktor generatora nowego poziomu
+     */
+    private SudokuGenerator() {
         result = new int[9][9];
         blocked = new boolean[9][9];
         availableNumbers = new IntList[9][9];
@@ -22,7 +40,12 @@ public class Generator {
                 availableNumbers[i][j] = new IntList();
     }
 
-    private Generator(int[][] level) {
+    /**
+     * Konstruktor generatora rozwiązania
+     *
+     * @param game plansza do rozwiązania
+     */
+    private SudokuGenerator(int[][] game) {
         result = new int[9][9];
         blocked = new boolean[9][9];
         availableNumbers = new IntList[9][9];
@@ -30,8 +53,8 @@ public class Generator {
         solve = true;
         for (int i = 0; i < 9; i++)
             for (int j = 0; j < 9; j++) {
-                result[i][j] = level[i][j];
-                blocked[i][j] = level[i][j] > 0;
+                result[i][j] = game[i][j];
+                blocked[i][j] = game[i][j] > 0;
                 availableNumbers[i][j] = new IntList();
             }
 
@@ -42,25 +65,41 @@ public class Generator {
         for (int[] ints : result) {
             System.out.println(Arrays.toString(ints));
         }
+        System.out.println();
         int[][] solved = solve(result);
         for (int[] ints : solved) {
             System.out.println(Arrays.toString(ints));
         }
     }
 
+    /**
+     * Generuje nowa planszę o danym poziomie trudności
+     *
+     * @param hard poziom trudności
+     * @return wygenerowaną plansza
+     */
     public static int[][] generateRandomFilled(boolean hard) {
-        Generator g = new Generator();
+        SudokuGenerator g = new SudokuGenerator();
         g.generate();
         g.removeSpaces(hard ? 50 : 35);
         return g.result;
     }
 
-    public static int[][] solve(int[][] level) {
-        Generator g = new Generator(level);
+    /**
+     * Generuje rozwiązanie planszy
+     *
+     * @param game plansza do rozwiązania
+     * @return rozwiązana plansza
+     */
+    public static int[][] solve(int[][] game) {
+        SudokuGenerator g = new SudokuGenerator(game);
         g.generate();
         return g.result;
     }
 
+    /**
+     * Generuje plansze / rozwiązanie
+     */
     private void generate() {
         int x = 0, y = 0;
         findAvailable(0, 0);
@@ -89,6 +128,11 @@ public class Generator {
         }
     }
 
+    /**
+     * Usuwa określoną ilość pól
+     *
+     * @param amount ilość pól do usunięcia
+     */
     private void removeSpaces(int amount) {
         IntList indicesLeft = IntList.fromRange(0, 81);
         for (int i = 0; i < amount; i++) {
@@ -98,6 +142,12 @@ public class Generator {
         }
     }
 
+    /**
+     * Znajduję dostępne cyfry dla danego pola
+     *
+     * @param x pozycja x pola
+     * @param y pozycja y pola
+     */
     private void findAvailable(int x, int y) {
         if (x > 8 || y > 8)
             return;
