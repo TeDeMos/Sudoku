@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -26,6 +27,7 @@ import utils.SudokuSaveLoad;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 
 public class SudokuController {
     public GridPane mainGrid;
@@ -340,8 +342,18 @@ public class SudokuController {
         String id = ((Button)e.getSource()).getId();
         if (id.equals("bSolve"))
             swapSolution();
-        if (!id.equals("bSolve"))
-            loadLevel(Generator.generateRandomFilled(id.equals("bHard")), null);
+        else {
+            Optional<ButtonType> result = null;
+            if (levelLoaded) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Uwaga!");
+                alert.setHeaderText("Uwaga");
+                alert.setContentText("Czy na pewno chcesz zacząć poziom o innej trudności?");
+                result = alert.showAndWait();
+            }
+            if (!levelLoaded || result.isPresent() && result.get() == ButtonType.OK)
+                loadLevel(Generator.generateRandomFilled(id.equals("bHard")), null);
+        }
     }
 
     @FXML
